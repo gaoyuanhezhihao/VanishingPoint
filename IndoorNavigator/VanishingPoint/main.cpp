@@ -4,12 +4,15 @@
 #include "main_func.h"
 
 #define PI 3.1415926
+#define CENTER_RANGE 0.1
 
 using namespace cv;
 using namespace std;
 
 int main()
 {
+	Point mark_point, current_point;
+	int center_x_min, center_x_max, center_y_min, center_y_max;
 	Mat image;
 
 	Mat dst, cdst;
@@ -23,6 +26,24 @@ int main()
 	}
 	namedWindow("Video");
 	char order = 0;
+
+	//get the initial position image.
+	while (1)
+	{
+		cap >> image;
+		mark_point = vanish_point_detection(image, cdst);
+		cout << "what about this ?" << endl;
+		std::cin >> order;
+		if (order == 'y')
+		{
+			break;
+		}
+	}
+	center_x_max = (1 + CENTER_RANGE) * mark_point.x;
+	center_x_min = (1 - CENTER_RANGE) * mark_point.x;
+	center_y_max = (1 + CENTER_RANGE) * mark_point.y;
+	center_y_min = (1 - CENTER_RANGE) * mark_point.y;
+	
 	while (char(waitKey(1)) != 'q' && cap.isOpened())
 	{
 		start = double(getTickCount());
@@ -34,7 +55,7 @@ int main()
 		}
 		else
 		{
-			vanish_point_detection(image, cdst);
+			current_point = vanish_point_detection(image, cdst);
 			//Canny(image, dst, 30, 70, 3);
 			//cvtColor(dst, cdst, CV_GRAY2BGR);
 
@@ -68,15 +89,28 @@ int main()
 			//}
 			double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 			cout << "It took " << duration_ms << " ms." << endl;
+			if (current_point.x > center_x_max)
+			{
+				cout << "left" << endl;
+			}
+			else if (current_point.x < center_x_min)
+			{
+				cout << "right" << endl;
+			}
+			else
+			{
+				cout << "center" << endl;
+			}
+			line(cdst, Point(mark_point.x, 0), Point(mark_point.x, image.rows), Scalar(100, 100, 100), 1, CV_AA);
 			imshow("detected lines", cdst);
 		}
 
 	}
 	cout << "Press any key to exit:" << endl;
-	cin >> order;
+	std::cin >> order;
 
 
 
-	waitKey();
+	cv::waitKey();
 	return 0;
 }

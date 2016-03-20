@@ -1,7 +1,8 @@
 #include "main_func.h"
 #include <numeric>
 #define PI 3.1415926
-
+using namespace std;
+using namespace cv;
 Point vanish_point_detection(Mat & image, Mat & cdst)
 {
 	vector<Vec2f> left_lines;

@@ -4,10 +4,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
-using namespace std;
-using namespace cv;
-bool hough_line_detect(Mat & image, Mat & cdst, vector<Vec2f> & left_lines, vector<Vec2f> & right_lines);
-Point vanish_point_detection(Mat & image, Mat & cdst);
-Point get_vanish_point(vector<Point> & points, Mat & cdst);
-bool draw_line(Mat & image, vector<Vec2f> & vec_lines, Scalar color);
+bool hough_line_detect(cv::Mat & image, cv::Mat & cdst, std::vector<cv::Vec2f> & left_lines, std::vector<cv::Vec2f> & right_lines);
+cv::Point vanish_point_detection(cv::Mat & image, cv::Mat & cdst);
+cv::Point get_vanish_point(std::vector<cv::Point> & points, cv::Mat & cdst);
+bool draw_line(cv::Mat & image, std::vector<cv::Vec2f> & vec_lines, cv::Scalar color);
 #endif MAIN_FUNC_H
