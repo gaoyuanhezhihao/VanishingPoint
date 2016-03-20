@@ -1,9 +1,11 @@
 #include "main_func.h"
+#include <numeric>
 #define PI 3.1415926
 
-char vanish_point_detection(Mat & image, Mat & cdst)
+Point vanish_point_detection(Mat & image, Mat & cdst)
 {
 	vector<Vec2f> left_lines;
+	vector<Point> Intersection;
 	vector<Vec2f> right_lines;
 	hough_line_detect(image, cdst, left_lines, right_lines);
 	draw_line(cdst, left_lines, Scalar(0, 255, 0));
@@ -23,11 +25,32 @@ char vanish_point_detection(Mat & image, Mat & cdst)
 			x = (rho_r*sin(theta_l) - rho_l*sin(theta_r)) / denom;
 			y = (rho_l*cos(theta_r) - rho_r*cos(theta_l)) / denom;
 			Point pt(x, y);
-			circle(cdst, pt, 5, Scalar(0, 0, 255));
+			Intersection.push_back(pt);
+			circle(cdst, pt, 5, Scalar(0, 150, 150));
 		}
 	}
-	return '\0';
+	return get_vanish_point(Intersection, cdst);
 }
+
+Point get_vanish_point(vector<Point> & points, Mat & cdst)
+{
+	long x = 0, y = 0;
+	if (points.size() == 0)
+	{
+		return Point(0, 0);
+	}
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		x += points[i].x;
+		y += points[i].y;
+	}
+	x /= points.size();
+	y /= points.size();
+	Point vp(x, y);
+	circle(cdst, vp, 5, Scalar(0, 0, 255));
+	return vp;
+}
+
 bool hough_line_detect(Mat & image, Mat & cdst, vector<Vec2f> & left_lines, vector<Vec2f> & right_lines)
 {
 	Mat dst;
