@@ -2,7 +2,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <string>
-#include "main_func.h"
+#include "vanish.hpp"
 
 #define PI 3.1415926
 #define CENTER_RANGE 0.1
