@@ -1,0 +1,5 @@
+file(GLOB SRC "*.cpp")
+add_library(range_hough STATIC ${SRC})
+target_link_libraries(range_hough config)
+target_include_directories(range_hough PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(range_hough ${OpenCV_LIBS})

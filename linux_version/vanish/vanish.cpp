@@ -1,4 +1,5 @@
 #include "vanish.hpp"
+#include "range_hough.hpp"
 #include <numeric>
 #define PI 3.1415926
 using namespace std;
@@ -54,25 +55,27 @@ Point get_vanish_point(vector<Point> & points, Mat & cdst)
 
 bool hough_line_detect(Mat & image, Mat & cdst, vector<Vec2f> & left_lines, vector<Vec2f> & right_lines)
 {
+    static const vector<pair<double, double>> theta_ranges{{10*PI/180, 60 * PI / 180}, {110 * PI / 180, 170 * PI / 180}};
 	Mat dst;
 	Canny(image, dst, 30, 70, 3);
 	cvtColor(dst, cdst, CV_GRAY2BGR);
 
 	vector<Vec2f> lines;
+    //range_hough(dst, theta_ranges, 150, lines);
 	// detect lines
-	HoughLines(dst, lines, 1, CV_PI / 180, 150, 0, 0);
-	for (size_t i = 0; i < lines.size(); i++)
-	{
-		float rho = lines[i][0], theta = lines[i][1];
-		if (10 * PI / 180 < theta && theta < 60 * PI / 180)
-		{
-			left_lines.push_back(lines[i]);
-		}
-		else if (110 * PI / 180 < theta && theta < 170 * PI / 180)
-		{
-			right_lines.push_back(lines[i]);
-		}
-	}
+    HoughLines(dst, lines, 1, CV_PI / 180, 150, 0, 0);
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        float rho = lines[i][0], theta = lines[i][1];
+        if (10 * PI / 180 < theta && theta < 60 * PI / 180)
+        {
+            left_lines.push_back(lines[i]);
+        }
+        else if (110 * PI / 180 < theta && theta < 170 * PI / 180)
+        {
+            right_lines.push_back(lines[i]);
+        }
+    }
 	return true;
 }
 bool draw_line(Mat & image, vector<Vec2f> & vec_lines, Scalar color)

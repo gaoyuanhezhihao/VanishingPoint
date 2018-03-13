@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include "vanish.hpp"
+#include "Config.hpp"
 
 #define PI 3.1415926
 #define CENTER_RANGE 0.1
@@ -22,7 +23,8 @@ int main(int argc, const char ** argv)
     if(argc != 2) {
         cout << "Error! \nusage example ./bin/vanish_pt ../data/video.wmv\n";
     }
-	VideoCapture cap(argv[1]);
+    configs.init(argv[1]);
+	VideoCapture cap(string(configs["video_path"]).c_str());
 	if (!cap.isOpened())
 	{
 		cout << "Capture could not be opened successfully" << endl;
