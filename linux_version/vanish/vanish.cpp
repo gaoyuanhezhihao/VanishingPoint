@@ -61,9 +61,10 @@ bool hough_line_detect(Mat & image, Mat & cdst, vector<Vec2f> & left_lines, vect
 	cvtColor(dst, cdst, CV_GRAY2BGR);
 
 	vector<Vec2f> lines;
-    //range_hough(dst, theta_ranges, 150, lines);
+    range_hough(dst, theta_ranges, 150, lines);
 	// detect lines
-    HoughLines(dst, lines, 1, CV_PI / 180, 150, 0, 0);
+    //HoughLines(dst, lines, 1, CV_PI / 180, 150, 0, 0);
+    //HoughLinesStandard(dst, 1, CV_PI / 180, 150, lines, INT_MAX, 0.0, PI);
     for (size_t i = 0; i < lines.size(); i++)
     {
         float rho = lines[i][0], theta = lines[i][1];

@@ -52,9 +52,10 @@ int main(int argc, const char ** argv)
 	
     int idx = 0;
     std::string dst_dir("./data/result/");
+    double cnt = 0;
+    double average = 0.0;
 	while (char(waitKey(1)) != 'q' && cap.isOpened())
 	{
-		start = double(getTickCount());
 		cap >> image;
 		if (image.empty())
 		{
@@ -63,6 +64,7 @@ int main(int argc, const char ** argv)
 		}
 		else
 		{
+            start = double(getTickCount());
 			current_point = vanish_point_detection(image, cdst);
 			//Canny(image, dst, 30, 70, 3);
 			//cvtColor(dst, cdst, CV_GRAY2BGR);
@@ -96,6 +98,8 @@ int main(int argc, const char ** argv)
 			//	}
 			//}
 			double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+            average = average * (cnt/(cnt+1)) + duration_ms/(cnt+1);
+            ++cnt;
 			cout << "It took " << duration_ms << " ms." << endl;
 			if (current_point.x > center_x_max)
 			{
@@ -123,5 +127,6 @@ int main(int argc, const char ** argv)
 
 
 	cv::waitKey();
+    cout << "average time used for one frame:" << average << " ms\n";
 	return 0;
 }
