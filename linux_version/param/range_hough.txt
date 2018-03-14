@@ -1,3 +1,4 @@
 theta_resolution = 1.0
 rho_resolution = 1.0
 video_path = ./data/c270_2.wmv
+result_dir = ./data/result/

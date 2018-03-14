@@ -66,10 +66,8 @@ flags = [
     '-isystem', '/home/hzh/study/cv/opencv3/build/include/opencv',
 '-isystem', './base',
 '-isystem', './config',
-'-isystem', './stereo',
 '-isystem', './feature',
-'-isystem', './vo',
-'-isystem', './solver',
+'-isystem', './vanish',
 
 # This path will only work on OS X, but extra paths that don't exist are not
 # harmful
