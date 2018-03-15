@@ -1,0 +1,3 @@
+result_dir = ./data/tagged/
+video_path = ./data/c270_2.wmv
+start_id = 120

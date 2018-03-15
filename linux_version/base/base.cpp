@@ -35,6 +35,45 @@ void draw_points(cv::Mat & img, const vector<Point2f> & pts, cv::Scalar color) {
     }
 }
 
+/** 
+ * @calculate dist from loneP to a line defined by two points: pb, pc.
+ * 
+ * @param pb
+ * @param pc
+ * @param loneP
+ * @param lmbd: (pedal-pb)/(pc-pb)
+ * 
+ * @return: distance 
+ */
+static int min_dist2line(const cv::Point &pb, const cv::Point &pc, const cv::Point & loneP, double & lmbd) {
+    const double num = (loneP.x - pb.x) * (pc.x - pb.x) + (loneP.y - pb.y) * (pc.y - pb.y);
+    const double denum = (pb.x - pc.x) * (pb.x - pc.x) + (pb.y - pc.y) * (pb.y - pc.y);
+    lmbd = num / denum;
+    int x_pedal = pb.x + lmbd * (pc.x - pb.x);
+    int y_pedal = pb.y + lmbd * (pc.y - pb.y);
+    return  sqrt(pow(x_pedal - loneP.x, 2) + pow(y_pedal - loneP.y, 2) );
+}
+int dist_pt2line(const Vec2f & line, const cv::Point & pt) {
+        float rho = line[0], theta = line[1];
+        Point pt1, pt2;
+        double a = cos(theta), b = sin(theta);
+        double x0 = a*rho, y0 = b*rho;
+        pt1.x = cvRound(x0 + 1000*(-b));
+        pt1.y = cvRound(y0 + 1000*(a));
+        pt2.x = cvRound(x0 - 1000*(-b));
+        pt2.y = cvRound(y0 - 1000*(a));
+        double lmbd;
+        return min_dist2line(pt1, pt2, pt, lmbd);
+}
+Point intersect(const Vec2f & line1, const Vec2f & line2) {
+    float rho_l = line1[0], theta_l = line1[1];
+    float rho_r = line2[0], theta_r = line2[1];
+    double denom = (sin(theta_l)*cos(theta_r) - cos(theta_l)*sin(theta_r));
+    int x = (rho_r*sin(theta_l) - rho_l*sin(theta_r)) / denom;
+    int y = (rho_l*cos(theta_r) - rho_r*cos(theta_l)) / denom;
+    return {x, y};
+}
+
 void draw_lines(cv::Mat & img, const vector<Vec2f> & lines, cv::Scalar color) {
     for( size_t i = 0; i < lines.size(); i++ ) {
         float rho = lines[i][0], theta = lines[i][1];
