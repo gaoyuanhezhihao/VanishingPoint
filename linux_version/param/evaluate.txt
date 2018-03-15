@@ -1,0 +1,6 @@
+result_dir = ./data/evaluate/
+sample_dir = ./data/tagged/
+start_id = 0
+last_id = 134
+theta_resolution = 1.0
+rho_resolution = 1.0
