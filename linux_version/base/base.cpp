@@ -34,6 +34,11 @@ void draw_points(cv::Mat & img, const vector<Point2f> & pts, cv::Scalar color) {
         cv::circle(img, Point(pt.x, pt.y), 5, color, 2);
     }
 }
+void draw_points(cv::Mat & img, const std::vector<cv::Point> & pts, cv::Scalar color) {
+    for(const Point& pt: pts) {
+        cv::circle(img, Point(pt.x, pt.y), 5, color, 2);
+    }
+}
 
 /** 
  * @calculate dist from loneP to a line defined by two points: pb, pc.
