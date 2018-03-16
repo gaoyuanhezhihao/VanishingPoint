@@ -1,12 +1,14 @@
 result_dir = ./data/detector/
-sample_dir = ./data/tagged2/
+sample_dir = ./data/tagged2/ ./data/tagged/
+start_id = 900 0
+last_id = 1000 169
+
 init_hough_thres = 150
 max_number_of_lines = 3
 theta_width_in_degree = 10
 hough_thres_width = 5
 max_retry = 3
 hough_retry_decrease = 15
-start_id = 900
-last_id = 1000
 theta_resolution = 1.0
 rho_resolution = 1.0
+center_bias = 10

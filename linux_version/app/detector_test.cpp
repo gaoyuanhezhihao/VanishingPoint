@@ -4,6 +4,8 @@
 #include <fstream>
 #include <string>
 #include <exception>
+#include <sstream>
+#include <boost/filesystem.hpp>
 #include "vanish.hpp"
 #include "Config.hpp"
 #include "base.hpp"
@@ -14,6 +16,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace boost::filesystem;
 
 Point read_vp(string p) {
     ifstream infile(p);
@@ -21,6 +24,125 @@ Point read_vp(string p) {
     infile >> pt.x >> pt.y;
     return pt;
 }
+
+struct Result{
+    double time_per_frame;
+    double detected_rate;
+    double dist_average;
+    double pose_accuracy;
+    int smpl_cnts;
+    void print(std::ostream& stream, const string split="\n") {
+        stream << "time_per_frame=" << time_per_frame << " ms"<<split;
+        stream << "detected_rate=" << detected_rate*100 << "%" << split;
+        stream << "dist_average=" << dist_average<< " pixels "<< split;
+        stream << "smpl_cnts=" << smpl_cnts<< split;
+        stream << "pose_accuracy=" << pose_accuracy * 100 << "%"  << split;
+    }
+};
+std::ostream & operator<< (std::ostream & s, Result rst) {
+    rst.print(s);
+    return s;
+}
+
+enum CamPose{
+    Left, Center, Right
+};
+
+CamPose check_pose(const Point & cur_pt, const Point & focus_pt) {
+    static const int BIAS = configs["center_bias"];
+    if(cur_pt.x < focus_pt.x-BIAS) {
+        return CamPose::Left;
+    }else if(cur_pt.x > focus_pt.x+BIAS) {
+        return CamPose::Right;
+    }else {
+        return CamPose::Center;
+    }
+}
+
+CamPose predict_pose(const Point & cur_pt, const Point & focus_pt,
+        const vector<Vec2f> & l_lines, const vector<Vec2f> & r_lines) {
+    if(cur_pt.x == 0 && cur_pt.y == 0) {
+        if(l_lines.empty() && !r_lines.empty()) {
+            return CamPose::Left;
+        }else if(!l_lines.empty() && r_lines.empty()) {
+            return CamPose::Right;
+        }else {
+            return CamPose::Center;
+        }
+    }
+    return check_pose(cur_pt, focus_pt);
+}
+
+Result evaluate(const string src_dir, string dst_dir, const int start_id,
+        const int last_id) {
+    boost::filesystem::path src_path(src_dir);
+    string smpl_name = src_path.filename().string();
+    dst_dir = dst_dir + smpl_name + "/";
+    static const int BIAS = configs["center_bias"];
+    ImgLogger edge_log(dst_dir, string("edge"));
+    ImgLogger line_rgb(dst_dir, string("line_rgb"));
+    ImgLogger line_edge(dst_dir, string("line_edge"));
+    ImgLogger rgb_log(dst_dir, string("rgb"));
+    const pair<double, double> r_theta_ranges{10*PI/180, 60 * PI / 180};
+    const pair<double, double> l_theta_ranges{110 * PI / 180, 170 * PI / 180};
+    VPDetector vp_detector(l_theta_ranges, r_theta_ranges);
+
+    int id = 0;
+    double time_elaps = 0.;
+    double cnt = 0;
+    double average = 0.0;
+    int missing_cnt = 0;
+    double sum_dist = 0.0;
+    const Point focus_pt = read_vp(src_dir+to_string(start_id)+".txt");
+    int pose_accurates = 0;
+    for(int i = start_id; i <= last_id; ++i) {
+        Mat image, dst, cdst, edge;
+        image = imread(src_dir+to_string(i)+".jpg");
+        const Point real_vp = read_vp(src_dir+to_string(i)+".txt");
+        if (image.empty()) {
+            throw std::logic_error("img "+to_string(i)+" is broken");
+        }
+
+        rgb_log.save(image, id);
+        //cur_vp = vanish_point_detection(image, cdst, edge, time_elaps);
+        vector<Vec2f> l_lines;
+        vector<Vec2f> r_lines;
+        Point cur_vp = vp_detector.detect_vp(image, cdst, edge, time_elaps, l_lines, r_lines);
+        if(cur_vp.x == 0 && cur_vp.y == 0) {
+            ++missing_cnt;
+        }else {
+            cout << "real:" << real_vp << ", detected:" << cur_vp << "\n";
+            double dist = cv::norm(cur_vp - real_vp);
+            sum_dist += dist;
+        }
+
+        if(check_pose(real_vp, focus_pt) == predict_pose(cur_vp, focus_pt, l_lines, r_lines)) {
+            ++ pose_accurates;
+        }
+
+        average = average * (cnt/(cnt+1)) + time_elaps /(cnt+1);
+        ++cnt;
+        cout << "It took " << time_elaps << " ms." << endl;
+        circle(image, real_vp, 3, Scalar(0, 0, 255));
+        line(image, Point(focus_pt.x-BIAS, 0), Point(focus_pt.x-BIAS, image.rows), Scalar(100, 100, 100), 1, CV_AA);
+        line(image, Point(focus_pt.x+BIAS, 0), Point(focus_pt.x+BIAS, image.rows), Scalar(100, 100, 100), 1, CV_AA);
+        edge_log.save(edge, id);
+        line_edge.save(cdst, id);
+        line_rgb.save(image, id);
+        ++id;
+        imshow("rgb", image);
+        waitKey(10);
+    }
+
+    Result rst;
+    rst.smpl_cnts = (last_id - start_id+1);
+    rst.pose_accuracy = pose_accurates/ double(rst.smpl_cnts);
+    rst.time_per_frame = average;
+    rst.detected_rate = double(last_id-start_id+1-missing_cnt)/rst.smpl_cnts;
+    rst.dist_average = sum_dist/rst.smpl_cnts;
+    return rst;
+}
+
 int main(int argc, const char ** argv)
 {
     Point mark_point, cur_vp;
@@ -33,60 +155,32 @@ int main(int argc, const char ** argv)
         cout << "Error! \nusage example ./bin/exe ../param/a.txt\n";
     }
     configs.init(argv[1]);
-    const string dst_dir = configs["result_dir"];
-    const string src_dir = configs["sample_dir"];
-    const int start_id = configs["start_id"];
-    const int last_id = configs["last_id"];
-    ImgLogger edge_log(dst_dir, string("edge"));
-    ImgLogger line_rgb(dst_dir, string("line_rgb"));
-    ImgLogger line_edge(dst_dir, string("line_edge"));
-    ImgLogger rgb_log(dst_dir, string("rgb"));
-    char order = 0;
+    stringstream dst_dir_ss( (string(configs["result_dir"])) );
+    stringstream src_dir_ss( (string(configs["sample_dir"])) );
+    stringstream start_id_ss( (string(configs["start_id"])) );
+    stringstream last_id_ss( (string(configs["last_id"])) );
+    
 
-    int id = 0;
-    double time_elaps = 0.;
-    double cnt = 0;
-    double average = 0.0;
-    int missing_cnt = 0;
-    double sum_dist = 0.0;
-    const pair<double, double> r_theta_ranges{10*PI/180, 60 * PI / 180};
-    const pair<double, double> l_theta_ranges{110 * PI / 180, 170 * PI / 180};
-    VPDetector vp_detector(l_theta_ranges, r_theta_ranges);
-    for(int i = start_id; i <= last_id; ++i) {
-        Mat image, dst, cdst, edge;
-        image = imread(src_dir+to_string(i)+".jpg");
-        const Point real_vp = read_vp(src_dir+to_string(i)+".txt");
-        if (image.empty()) {
-            throw std::logic_error("img "+to_string(i)+" is broken");
-        }
-        else {
-            rgb_log.save(image, id);
-            //cur_vp = vanish_point_detection(image, cdst, edge, time_elaps);
-            cur_vp = vp_detector.detect_vp(image, cdst, edge, time_elaps);
-            if(cur_vp.x == 0 && cur_vp.y == 0) {
-                ++missing_cnt;
-            }else {
-                cout << "real:" << real_vp << ", detected:" << cur_vp << "\n";
-                double dist = cv::norm(cur_vp - real_vp);
-                sum_dist += dist;
-            }
-
-            average = average * (cnt/(cnt+1)) + time_elaps /(cnt+1);
-            ++cnt;
-            cout << "It took " << time_elaps << " ms." << endl;
-            edge_log.save(edge, id);
-            line_edge.save(cdst, id);
-            line_rgb.save(image, id);
-            ++id;
-            imshow("rgb", image);
-            waitKey(10);
-        }
+    string dst_dir;
+    string src_dir;
+    int start_id;
+    int last_id;
+    vector<Result> rst_vec;
+    vector<string> src_vec;
+    while(dst_dir_ss) {
+        dst_dir_ss >> dst_dir;
+        src_dir_ss >> src_dir;
+        start_id_ss >> start_id;
+        last_id_ss >> last_id;
+        src_vec.push_back(src_dir);
+        Result rst = evaluate(src_dir, dst_dir, start_id, last_id);
+        rst_vec.push_back(rst);
     }
-    //cout << "Press any key to exit:" << endl;
-    //std::cin >> order;
 
-    cout << "average time used for one frame:" << average << " ms\n";
-    cout << double(last_id-start_id+1-missing_cnt)/(last_id-start_id+1) << "% detected\n";
-    cout << "average distance = " << sum_dist/(last_id - start_id+1) << "\n";
+    for(size_t i = 0; i < rst_vec.size(); ++i) {
+        cout << src_vec[i] << '\n';
+        cout << rst_vec[i] << "\n----------\n";
+    }
+
     return 0;
 }

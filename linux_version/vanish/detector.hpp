@@ -29,6 +29,6 @@ class VPDetector{
         VanishLineDetector r_line_detector;
     public:
         VPDetector(const pair<double, double>& init_l_theta_rg, const pair<double, double> & init_r_theta_rg);
-        Point detect_vp(Mat & image, Mat & cdst, Mat & edge, double & time_used);
+        Point detect_vp(Mat & image, Mat & cdst, Mat & edge, double & time_used, vector<Vec2f>&l_lines, vector<Vec2f> & r_lines);
 };
 #endif //DETECTOR_H

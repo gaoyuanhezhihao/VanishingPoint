@@ -142,10 +142,10 @@ vector<Point> intersect(vector<Vec2f> & l_lines, vector<Vec2f> & r_lines) {
     return Intersection;
 }
 
-Point VPDetector::detect_vp(Mat & image, Mat & cdst, Mat & edge, double & time_used) {
+Point VPDetector::detect_vp(Mat & image, Mat & cdst, Mat & edge, double & time_used, vector<Vec2f>&l_lines, vector<Vec2f> & r_lines) {
     Canny(image, edge, 30, 70, 3);
-    vector<Vec2f> l_lines;
-    vector<Vec2f> r_lines;
+    //vector<Vec2f> l_lines;
+    //vector<Vec2f> r_lines;
     const double start = double(getTickCount());
     l_line_detector.detect(edge, l_lines);
     r_line_detector.detect(edge, r_lines);
