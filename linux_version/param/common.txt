@@ -1,10 +1,10 @@
-result_dir = ./data/detector/
+result_dir = ./data/common/
 sample_dir = ./data/tagged2/ ./data/tagged/
 start_id = 900 0
 last_id = 1000 169
 
 init_hough_thres = 150
-max_number_of_lines = 2
+max_number_of_lines = 3
 theta_width_in_degree = 10
 hough_thres_width = 5
 max_retry = 3

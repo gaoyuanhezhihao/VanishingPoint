@@ -57,7 +57,9 @@ int main(int argc, const char ** argv)
 		}
 		else {
             rgb_log.save(image, id);
-			cur_vp = vanish_point_detection(image, cdst, edge, time_elaps);
+            vector<Vec2f> l_lines;
+            vector<Vec2f> r_lines;
+			cur_vp = vanish_point_detection(image, cdst, edge, time_elaps, l_lines, r_lines);
             if(cur_vp.x == 0 && cur_vp.y == 0) {
                 ++missing_cnt;
             }else {

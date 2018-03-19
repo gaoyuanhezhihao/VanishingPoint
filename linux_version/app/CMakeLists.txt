@@ -12,3 +12,5 @@ target_link_libraries(evaluate ${OpenCV_LIBS} base vanish config)
 add_executable(detector_test detector_test.cpp)
 target_link_libraries(detector_test ${OpenCV_LIBS} base vanish config)
 
+add_executable(common_test common_test.cpp)
+target_link_libraries(common_test ${OpenCV_LIBS} base vanish config)

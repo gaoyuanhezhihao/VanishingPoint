@@ -47,7 +47,9 @@ int main(int argc, const char ** argv)
         Mat image, dst, cdst, edge;
 		cap >> image;
         ++id;
-		mark_point = vanish_point_detection(image, cdst, edge, time_elaps);
+        vector<Vec2f> l_lines;
+        vector<Vec2f> r_lines;
+		mark_point = vanish_point_detection(image, cdst, edge, time_elaps, l_lines, r_lines);
         cv::imshow("init", image);
         waitKey(10);
 		cout << "what about this ?" << endl;
@@ -76,7 +78,9 @@ int main(int argc, const char ** argv)
 		else
 		{
             rgb_log.save(image, id);
-			current_point = vanish_point_detection(image, cdst, edge, time_elaps);
+            vector<Vec2f> l_lines;
+            vector<Vec2f> r_lines;
+			current_point = vanish_point_detection(image, cdst, edge, time_elaps, l_lines, r_lines);
 			//Canny(image, dst, 30, 70, 3);
 			//cvtColor(dst, cdst, CV_GRAY2BGR);
 

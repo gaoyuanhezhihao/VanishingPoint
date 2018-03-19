@@ -6,6 +6,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 using namespace std;
 using namespace cv;
+class RangePredictor{
+    private:
+        vector<pair<double, double>> _records;
+    public:
+        pair<double, double> predict(const vector<double> & cur); 
+};
 class VanishLineDetector{
     private:
         list<int>  _hough_votes;
@@ -13,11 +19,15 @@ class VanishLineDetector{
         double _theta_predicted;
         pair<double, double> _theta_rg;
         int _hough_thres;
+        RangePredictor _theta_predictor;
+        bool _dynamic_predict_theta(const vector<Vec2f> & lines, const vector<int> & votes);
         bool _predict_theta(const vector<Vec2f> & lines,
                 const vector<int> & votes);
         bool _predict_hough_thres(const vector<Vec2f>&lines,
                 const vector<int> & votes);
         void _filter_lines(vector<Vec2f> & lines, vector<int> & votes);
+        void _filter_lines_by_edge(vector<Vec2f> & lines, const Mat & edge);
+        void _filter_lines_by_edge(vector<Vec2f> & lines, vector<int> &votes, const Mat & edge);
     public:
         VanishLineDetector(const pair<double, double> init_theta_rg); 
         bool detect(const Mat & cur_frame, vector<Vec2f> & lines); 

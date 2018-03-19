@@ -47,24 +47,18 @@ bool hough_line_detect(const Mat & image, Mat & edge, vector<Vec2f> & left_lines
     return true;
 }
 
-Point vanish_point_detection(Mat & image, Mat & cdst, Mat & edge, double & time_used) {
+Point vanish_point_detection(Mat & image, Mat & cdst, Mat & edge, double & time_used, vector<Vec2f> & left_lines, vector<Vec2f> & right_lines) {
     static const string dst_dir = configs["result_dir"];
-	vector<Vec2f> left_lines;
+	//vector<Vec2f> left_lines;
 	vector<Point> Intersection;
-    vector<Vec2f> right_lines;
+    //vector<Vec2f> right_lines;
     
     //Mat edge;
 
     const double start = double(getTickCount());
     hough_line_detect(image, edge, left_lines, right_lines);
-    time_used = (double(getTickCount()) - start) * 1000 / getTickFrequency();
 
     //imwrite(dst_dir+"edge/"+to_string(id)+".jpg", edge);
-    cvtColor(edge, cdst, CV_GRAY2BGR);
-    draw_line(cdst, left_lines, Scalar(0, 255, 0));
-    draw_line(cdst, right_lines, Scalar(255, 0, 0));
-    draw_line(image, left_lines, Scalar(0, 255, 0));
-    draw_line(image, right_lines, Scalar(255, 0, 0));
     size_t i = 0, j = 0;
     double x = 0;
     double y = 0;
@@ -77,12 +71,22 @@ Point vanish_point_detection(Mat & image, Mat & cdst, Mat & edge, double & time_
             y = (rho_l*cos(theta_r) - rho_r*cos(theta_l)) / denom;
             Point pt(x, y);
             Intersection.push_back(pt);
-            circle(cdst, pt, 5, Scalar(0, 150, 150));
-            circle(image, pt, 5, Scalar(0, 150, 150));
         }
     }
-    Point vp = get_vanish_point(Intersection);
 
+    Point vp = get_vanish_point(Intersection);
+    time_used = (double(getTickCount()) - start) * 1000 / getTickFrequency();
+
+    /* logging */
+    for(const Point & pt: Intersection) {
+        circle(cdst, pt, 5, Scalar(0, 150, 150));
+        circle(image, pt, 5, Scalar(0, 150, 150));
+    }
+    cvtColor(edge, cdst, CV_GRAY2BGR);
+    draw_line(cdst, left_lines, Scalar(0, 255, 0));
+    draw_line(cdst, right_lines, Scalar(255, 0, 0));
+    draw_line(image, left_lines, Scalar(0, 255, 0));
+    draw_line(image, right_lines, Scalar(255, 0, 0));
     circle(cdst, vp, 5, Scalar(0, 0, 255));
     circle(image, vp, 5, Scalar(0, 0, 255));
     //imwrite(dst_dir+"line_edge/"+to_string(i)+".jpg", cdst);

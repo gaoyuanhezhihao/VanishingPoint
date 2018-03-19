@@ -6,7 +6,6 @@
 #include <exception>
 #include <sstream>
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 #include "vanish.hpp"
 #include "Config.hpp"
 #include "base.hpp"
@@ -89,26 +88,19 @@ CamPose predict_pose(const Point & cur_pt, const Point & focus_pt,
 
 Result evaluate(const string src_dir, string dst_dir, const int start_id,
         const int last_id) {
-    vector<string> dirs;
-    boost::split(dirs, src_dir, boost::is_any_of("/"));
-    string smpl_name = dirs[dirs.size()-2];
-    //boost::filesystem::path src_path(src_dir);
-
-    //string smpl_name = src_path.filename().string();
+    boost::filesystem::path src_path(src_dir);
+    string smpl_name = src_path.filename().string();
     dst_dir = dst_dir + smpl_name + "/";
-    //cout << dst_dir << endl;
-    //while(true){}
     static const int BIAS = configs["center_bias"];
     ImgLogger edge_log(dst_dir, string("edge"));
     ImgLogger line_rgb(dst_dir, string("line_rgb"));
     ImgLogger line_edge(dst_dir, string("line_edge"));
     ImgLogger rgb_log(dst_dir, string("rgb"));
-    static ofstream report(dst_dir + "report.txt");
-
     const pair<double, double> r_theta_ranges{10*PI/180, 60 * PI / 180};
     const pair<double, double> l_theta_ranges{110 * PI / 180, 170 * PI / 180};
     VPDetector vp_detector(l_theta_ranges, r_theta_ranges);
 
+    int id = 0;
     double time_elaps = 0.;
     double cnt = 0;
     double average = 0.0;
@@ -124,14 +116,14 @@ Result evaluate(const string src_dir, string dst_dir, const int start_id,
             throw std::logic_error("img "+to_string(i)+" is broken");
         }
 
-        rgb_log.save(image, i);
+        rgb_log.save(image, id);
         //cur_vp = vanish_point_detection(image, cdst, edge, time_elaps);
         vector<Vec2f> l_lines;
         vector<Vec2f> r_lines;
-        Point cur_vp = vp_detector.detect_vp(image, cdst, edge, time_elaps, l_lines, r_lines);
+        //Point cur_vp = vp_detector.detect_vp(image, cdst, edge, time_elaps, l_lines, r_lines);
+		Point cur_vp = vanish_point_detection(image, cdst, edge, time_elaps, l_lines, r_lines);
         if(cur_vp.x == 0 && cur_vp.y == 0) {
             ++missing_cnt;
-            report << (to_string(i) + " cur_vp missed\n");
         }else {
             cout << "real:" << real_vp << ", detected:" << cur_vp << "\n";
             double dist = cv::norm(cur_vp - real_vp);
@@ -140,8 +132,6 @@ Result evaluate(const string src_dir, string dst_dir, const int start_id,
 
         if(check_pose(real_vp, focus_pt) == predict_pose(cur_vp, focus_pt, l_lines, r_lines)) {
             ++ pose_accurates;
-        }else {
-            report << (to_string(i) + " pose is wrong\n");
         }
 
         average = average * (cnt/(cnt+1)) + time_elaps /(cnt+1);
@@ -150,9 +140,10 @@ Result evaluate(const string src_dir, string dst_dir, const int start_id,
         circle(image, real_vp, 3, Scalar(0, 0, 255));
         line(image, Point(focus_pt.x-BIAS, 0), Point(focus_pt.x-BIAS, image.rows), Scalar(100, 100, 100), 1, CV_AA);
         line(image, Point(focus_pt.x+BIAS, 0), Point(focus_pt.x+BIAS, image.rows), Scalar(100, 100, 100), 1, CV_AA);
-        edge_log.save(edge, i);
-        line_edge.save(cdst, i);
-        line_rgb.save(image, i);
+        edge_log.save(edge, id);
+        line_edge.save(cdst, id);
+        line_rgb.save(image, id);
+        ++id;
         //imshow("rgb", image);
         //waitKey(10);
     }
